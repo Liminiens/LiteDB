@@ -5,6 +5,7 @@ using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
+using Utf8Json;
 
 namespace LiteDB
 {
@@ -163,7 +164,7 @@ namespace LiteDB
             }
         }
 
-        // ==> there is no convert to BsonDocument, must use { .. } syntax 
+        // ==> there is no convert to BsonDocument, must use { .. } syntax
 
         /// <summary>
         /// Return an array from list of values. Support multiple values but returns a single value
@@ -370,7 +371,7 @@ namespace LiteDB
                 yield return value.IsDecimal;
             }
         }
-        
+
         /// <summary>
                  /// Return true if value is NUMBER (int, double, decimal). Support multiple values
                  /// </summary>

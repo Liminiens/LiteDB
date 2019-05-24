@@ -32,6 +32,29 @@ namespace LiteDB
         /// </summary>
         public static void Serialize(BsonValue value, TextWriter writer, bool pretty = false, bool writeBinary = true)
         {
+            /*
+            if (pretty)
+            {
+                if (writeBinary)
+                {
+                    writer.Write(Utf8Json.JsonSerializer.PrettyPrint(value.AsBinary));
+                }
+                else
+                {
+                    writer.Write(Utf8Json.JsonSerializer.PrettyPrint(value.AsString));
+                }
+            }
+            else
+            {
+                if (writeBinary)
+                {
+                    writer.Write(Utf8Json.JsonSerializer.Serialize(value.AsBinary));
+                }
+                else
+                {
+                    writer.Write(Utf8Json.JsonSerializer.Serialize(value.AsString));
+                }
+            }*/
             var w = new JsonWriter(writer);
             w.Pretty = pretty;
             w.WriteBinary = writeBinary;
@@ -84,7 +107,7 @@ namespace LiteDB
 
                 var value = reader.Deserialize();
 
-                s.Seek((int)(reader.Position - 1));
+                s.Seek((int) (reader.Position - 1));
 
                 return value;
             }
