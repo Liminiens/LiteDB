@@ -9,7 +9,7 @@ namespace LiteDB
         /// <inheritdoc />
         public void Serialize(ref Utf8Json.JsonWriter writer, BsonValue value, IJsonFormatterResolver formatterResolver)
         {
-            throw new NotImplementedException();
+            writer.
         }
 
         /// <inheritdoc />
@@ -43,7 +43,7 @@ namespace LiteDB
 
             throw LiteException.UnexpectedToken("");
         }
-
+        
         private BsonValue ReadObject(ref Utf8Json.JsonReader reader)
         {
             var obj = new BsonDocument();

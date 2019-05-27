@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using Utf8Json.Resolvers;
 
 namespace LiteDB
 {
@@ -10,7 +11,10 @@ namespace LiteDB
     /// </summary>
     public class JsonSerializer
     {
-        #region Serialize
+        static JsonSerializer()
+        {
+            CompositeResolver.RegisterAndSetAsDefault(new BsonValueFormatter());
+        }
 
         /// <summary>
         /// Json serialize a BsonValue into a String
@@ -32,7 +36,7 @@ namespace LiteDB
         /// </summary>
         public static void Serialize(BsonValue value, TextWriter writer, bool pretty = false, bool writeBinary = true)
         {
-            /*
+            value = value ?? BsonValue.Null;
             if (pretty)
             {
                 if (writeBinary)
@@ -54,16 +58,8 @@ namespace LiteDB
                 {
                     writer.Write(Utf8Json.JsonSerializer.Serialize(value.AsString));
                 }
-            }*/
-            var w = new JsonWriter(writer);
-            w.Pretty = pretty;
-            w.WriteBinary = writeBinary;
-            w.Serialize(value ?? BsonValue.Null);
+            }
         }
-
-        #endregion
-
-        #region Deserialize
 
         /// <summary>
         /// Deserialize a Json string into a BsonValue
@@ -136,7 +132,5 @@ namespace LiteDB
 
             return jr.DeserializeArray();
         }
-
-        #endregion
     }
 }

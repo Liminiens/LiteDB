@@ -6,27 +6,20 @@ using System.Linq;
 
 namespace LiteDB
 {
-    internal class JsonWriter
+    internal class JsonBsonValueWriter
     {
-        private const int INDENT_SIZE = 4;
-
-        private TextWriter _writer;
-        private int _indent;
-        private string _spacer = "";
+        private Utf8Json.JsonWriter _writer;
 
         public bool Pretty { get; set; }
         public bool WriteBinary { get; set; }
 
-        public JsonWriter(TextWriter writer)
+        public JsonBsonValueWriter(ref Utf8Json.JsonWriter writer)
         {
             _writer = writer;
         }
 
         public void Serialize(BsonValue value)
         {
-            _indent = 0;
-            _spacer = this.Pretty ? " " : "";
-
             this.WriteValue(value ?? BsonValue.Null);
         }
 
@@ -36,7 +29,7 @@ namespace LiteDB
             switch (value.Type)
             {
                 case BsonType.Null:
-                    _writer.Write("null");
+                    _writer.WriteNull();
                     break;
 
                 case BsonType.Array:
@@ -48,7 +41,7 @@ namespace LiteDB
                     break;
 
                 case BsonType.Boolean:
-                    _writer.Write(((bool)value.RawValue).ToString().ToLower());
+                    _writer.WriteBoolean((bool)value.RawValue);
                     break;
 
                 case BsonType.String:
@@ -56,11 +49,11 @@ namespace LiteDB
                     break;
 
                 case BsonType.Int32:
-                    _writer.Write((Int32)value.RawValue);
+                    _writer.WriteInt32((Int32)value.RawValue);
                     break;
 
                 case BsonType.Double:
-                    _writer.Write(((Double)value.RawValue).ToString("0.0########", NumberFormatInfo.InvariantInfo));
+                    _writer.WriteDouble(Convert.ToDouble(value.RawValue, NumberFormatInfo.InvariantInfo));
                     break;
 
                 case BsonType.Binary:
@@ -100,25 +93,19 @@ namespace LiteDB
 
         private void WriteObject(BsonDocument obj)
         {
-            var length = obj.Keys.Count();
-            var hasData = length > 0;
-
-            this.WriteStartBlock("{", hasData);
-
-            var index = 0;
-
+            _writer.WriteBeginObject();
             foreach (var key in obj.Keys)
             {
                 this.WriteKeyValue(key, obj[key], index++ < length - 1);
             }
-
-            this.WriteEndBlock("}", hasData);
+            _writer.WriteEndObject();
         }
 
         private void WriteArray(BsonArray arr)
         {
             var hasData = arr.Count > 0;
 
+            _writer.WriteBeginArray();
             this.WriteStartBlock("[", hasData);
 
             for (var i = 0; i < arr.Count; i++)
@@ -130,6 +117,7 @@ namespace LiteDB
                 {
                     if (!((item.IsDocument && item.AsDocument.Keys.Any()) || (item.IsArray && item.AsArray.Count > 0)))
                     {
+                        _writer.WriteBeginArray();
                         this.WriteIndent();
                     }
                 }
@@ -138,17 +126,17 @@ namespace LiteDB
 
                 if (i < arr.Count - 1)
                 {
-                    _writer.Write(',');
+                    _writer.WriteValueSeparator();
                 }
                 this.WriteNewLine();
             }
 
-            this.WriteEndBlock("]", hasData);
+            _writer.WriteEndArray();
         }
 
         private void WriteString(string s)
         {
-            _writer.Write('\"');
+            _writer.WriteQuotation();
             int l = s.Length;
             for (var index = 0; index < l; index++)
             {
@@ -204,16 +192,14 @@ namespace LiteDB
         {
             // format: { "$type": "string-value" }
             // no string.Format to better performance
-            _writer.Write("{\"");
-            _writer.Write(type);
-            _writer.Write("\":");
-            _writer.Write(_spacer);
-            _writer.Write("\"");
-            _writer.Write(value);
-            _writer.Write("\"}");
+            _writer.WriteBeginObject();
+            _writer.WritePropertyName(type);
+            _writer.WriteNameSeparator();
+            _writer.WriteString(value);
+            _writer.WriteEndObject();
         }
 
-        private void WriteKeyValue(string key, BsonValue value, bool comma)
+        private void WriteKeyValue(string key, BsonValue value)
         {
             this.WriteIndent();
 
@@ -240,51 +226,6 @@ namespace LiteDB
             }
 
             this.WriteNewLine();
-        }
-
-        private void WriteStartBlock(string str, bool hasData)
-        {
-            if (hasData)
-            {
-                this.WriteIndent();
-                _writer.Write(str);
-                this.WriteNewLine();
-                _indent++;
-            }
-            else
-            {
-                _writer.Write(str);
-            }
-        }
-
-        private void WriteEndBlock(string str, bool hasData)
-        {
-            if (hasData)
-            {
-                _indent--;
-                this.WriteIndent();
-                _writer.Write(str);
-            }
-            else
-            {
-                _writer.Write(str);
-            }
-        }
-
-        private void WriteNewLine()
-        {
-            if (this.Pretty)
-            {
-                _writer.WriteLine();
-            }
-        }
-
-        private void WriteIndent()
-        {
-            if (this.Pretty)
-            {
-                _writer.Write("".PadRight(_indent * INDENT_SIZE, ' '));
-            }
         }
     }
 }
